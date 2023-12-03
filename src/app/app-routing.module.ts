@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { DEMO_ROUTES } from '@feature/demo/demo-routing-parent';
+import { HUEZZ_ROUTES } from '@feature/huezz/huezz-routing-parent';
 
-const routes: Routes = [...DEMO_ROUTES];
+const routes: Routes = [...HUEZZ_ROUTES];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],

@@ -1,0 +1,26 @@
+<div class="boxes">
+  <svg
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    [attr.viewBox]="'0 0 ' + gridWidth + ' ' + gridWidth"
+    [attr.width]="gridWidth"
+    [attr.height]="gridWidth"
+  >
+    @for (row of grid; track row; let rowNum = $index) { @for (cell of row; track cell; let cellNum = $index) {
+    <rect
+      class="rect"
+      [attr.x]="(100 / gridSize) * cellNum + '%'"
+      [attr.y]="(100 / gridSize) * rowNum + '%'"
+      [attr.width]="100 / gridSize + '%'"
+      [attr.height]="100 / gridSize + '%'"
+      [ngClass]="{ placed: rowNum === cell.pos[0] && cellNum === cell.pos[1] }"
+      (touchstart)="touchStart($event)"
+      (touchend)="touchEnd()"
+      (touchmove)="touchMove($event)"
+      (touchcancel)="touchEnd(false)"
+      [attr.fill]="cell | toRgba"
+    />
+    } }
+  </svg>
+</div>

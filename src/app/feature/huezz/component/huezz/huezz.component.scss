@@ -1,0 +1,16 @@
+@import 'app-theme';
+
+.boxes {
+  margin: auto;
+  display: flex;
+  width: min-content;
+}
+
+.rect {
+  stroke: rgba(0, 0, 0, 100%);
+  stroke-width: 0;
+
+  &.placed {
+    opacity: 1;
+  }
+}
