@@ -1,13 +1,14 @@
+/* eslint-disable no-magic-numbers */
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { Cell } from '@feature/huezz/model/huezz.model';
+import { Cell, CellPos } from '@feature/huezz/model/huezz.model';
 
-const GRID_SIZE = 10;
+const GRID_SIZE = 5;
 const RAND_ITER = GRID_SIZE * GRID_SIZE;
-const GRID_WIDTH = 500;
-const COLOR_MAX = 256;
-const COLOR_START = 0;
-const COLOR_CENTER = 2;
-const DIST = Math.floor((COLOR_MAX - COLOR_START) / GRID_SIZE);
+const GRID_WIDTH = 360;
+// const COLOR_MAX = 256;
+// const COLOR_START = 0;
+// const COLOR_CENTER = 2;
+// const DIST = Math.floor((COLOR_MAX - COLOR_START) / GRID_SIZE);
 
 @Component({
   selector: 'app-huezz',
@@ -35,11 +36,19 @@ export class HuezzComponent {
   }
 
   public generateGrid() {
+    const startR = Math.floor(Math.random() * 256);
+    const stepR = Math.floor((startR < 128 ? 256 - startR : -1 * startR) / this.gridSize);
+    const startG = Math.floor(Math.random() * 256);
+    const stepG = Math.floor((startG < 128 ? 256 - startG : -1 * startG) / this.gridSize);
+    const startB = Math.floor(Math.random() * 256);
+    const stepB = Math.floor((startB < 128 ? 256 - startB : -1 * startB) / this.gridSize);
+    console.warn([startR, stepR, startG, stepG, startB, stepB]);
+
     this.grid = Array.from({ length: GRID_SIZE }, (_1, r) =>
       Array.from({ length: GRID_SIZE }, (_2, c) => ({
-        r: (COLOR_START + (COLOR_MAX - DIST * GRID_SIZE)) / COLOR_CENTER + c * DIST,
-        g: (COLOR_START + (COLOR_MAX - DIST * GRID_SIZE)) / COLOR_CENTER + c * DIST,
-        b: (COLOR_START + (COLOR_MAX - DIST * GRID_SIZE)) / COLOR_CENTER + r * DIST,
+        r: startR + r * stepR,
+        g: startG + c * stepG,
+        b: startB + ((c + r) / 2) * stepB,
         pos: [r, c],
       })),
     );
@@ -64,7 +73,7 @@ export class HuezzComponent {
     }
   }
 
-  private getTouchCoords = (_event: TouchEvent) => {
+  private getTouchCoords = (_event: TouchEvent): CellPos => {
     const posX = Math.floor(
       (_event.targetTouches[0]!.clientX - (document.querySelector('.boxes') as HTMLElement).offsetLeft) / (this.gridWidth / this.gridSize),
     );
@@ -76,11 +85,8 @@ export class HuezzComponent {
   };
 
   public touchStart(_event: TouchEvent) {
-    const pos = this.getTouchCoords(_event);
-    this.pickedX = pos.x;
-    this.pickedY = pos.y;
-
-    this.dragging = true;
+    _event.preventDefault();
+    this.pickUp(this.getTouchCoords(_event));
   }
 
   private inRange = (place: number | undefined): boolean => {
@@ -88,6 +94,37 @@ export class HuezzComponent {
   };
 
   public touchEnd(drop: boolean = true) {
+    this.release(drop);
+  }
+
+  public touchMove(_event: TouchEvent) {
+    _event.preventDefault();
+    if (this.dragging) {
+      this.updateCoords(this.getTouchCoords(_event));
+    }
+  }
+
+  private updateCoords(pos: CellPos) {
+    this.dropX = pos.x;
+    this.dropY = pos.y;
+  }
+
+  private checkGameEnd(grid: Cell[][]): boolean {
+    return grid
+      .map((row, r) => {
+        return row.every((cell, c) => cell.pos[0] === r && cell.pos[1] === c);
+      })
+      .every(Boolean);
+  }
+
+  private pickUp(pos: CellPos) {
+    this.pickedX = pos.x;
+    this.pickedY = pos.y;
+
+    this.dragging = true;
+  }
+
+  private release(drop: boolean = true) {
     this.dragging = false;
     if (drop) {
       if ([this.pickedX, this.pickedY, this.dropX, this.dropY].every(this.inRange)) {
@@ -95,7 +132,7 @@ export class HuezzComponent {
         this.grid[this.pickedY!]![this.pickedX!] = this.grid[this.dropY!]![this.dropX!]!;
         this.grid[this.dropY!]![this.dropX!] = elem;
       }
-      console.warn(this.grid, this.checkGameEnd(this.grid));
+      console.warn(this.checkGameEnd(this.grid));
     }
     this.dropX = undefined;
     this.dropY = undefined;
@@ -103,20 +140,17 @@ export class HuezzComponent {
     this.pickedY = undefined;
   }
 
-  public touchMove(_event: TouchEvent) {
-    if (this.dragging) {
-      const pos = this.getTouchCoords(_event);
-      this.dropX = pos.x;
-      this.dropY = pos.y;
-    }
+  public dragEnd() {
+    this.release();
   }
 
-  private checkGameEnd(grid: Cell[][]) {
-    const res = grid
-      .map((row, r) => {
-        return row.every((cell, c) => cell.pos[0] === r && cell.pos[1] === c);
-      })
-      .every(Boolean);
-    console.warn(res);
+  public dragStart(_event: MouseEvent, pos: CellPos) {
+    this.pickUp(pos);
+  }
+
+  public dragOver(_event: MouseEvent, pos: CellPos) {
+    if (this.dragging) {
+      this.updateCoords(pos);
+    }
   }
 }

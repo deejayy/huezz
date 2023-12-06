@@ -1,4 +1,4 @@
-<div class="boxes">
+<div class="boxes" (mouseup)="dragEnd()">
   <svg
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
@@ -8,19 +8,33 @@
     [attr.height]="gridWidth"
   >
     @for (row of grid; track row; let rowNum = $index) { @for (cell of row; track cell; let cellNum = $index) {
-    <rect
-      class="rect"
-      [attr.x]="(100 / gridSize) * cellNum + '%'"
-      [attr.y]="(100 / gridSize) * rowNum + '%'"
-      [attr.width]="100 / gridSize + '%'"
-      [attr.height]="100 / gridSize + '%'"
-      [ngClass]="{ placed: rowNum === cell.pos[0] && cellNum === cell.pos[1] }"
-      (touchstart)="touchStart($event)"
-      (touchend)="touchEnd()"
-      (touchmove)="touchMove($event)"
-      (touchcancel)="touchEnd(false)"
-      [attr.fill]="cell | toRgba"
-    />
+    <g (touchstart)="touchStart($event)" (touchend)="touchEnd()" (touchmove)="touchMove($event)" (touchcancel)="touchEnd(false)">
+      <rect
+        class="rect"
+        [attr.x]="(100 / gridSize) * cellNum + '%'"
+        [attr.y]="(100 / gridSize) * rowNum + '%'"
+        [attr.width]="100 / gridSize + '%'"
+        [attr.height]="100 / gridSize + '%'"
+        [attr.fill]="cell | toRgba"
+      />
+      <rect
+        class="rect-shine"
+        [attr.x]="(100 / gridSize) * (cellNum + 0.1) + '%'"
+        [attr.y]="(100 / gridSize) * (rowNum + 0.1) + '%'"
+        [attr.width]="(100 / gridSize) * 0.8 + '%'"
+        [attr.height]="(100 / gridSize) * 0.8 + '%'"
+        (mousedown)="dragStart($event, { x: cellNum, y: rowNum })"
+        (mousemove)="dragOver($event, { x: cellNum, y: rowNum })"
+        rx="50%"
+      />
+      <circle
+        class="circle"
+        [ngClass]="{ placed: rowNum === cell.pos[0] && cellNum === cell.pos[1] }"
+        [attr.cx]="(100 / gridSize) * (cellNum + 0.5) + '%'"
+        [attr.cy]="(100 / gridSize) * (rowNum + 0.5) + '%'"
+        r="0.5%"
+      ></circle>
+    </g>
     } }
   </svg>
 </div>

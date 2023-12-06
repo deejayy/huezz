@@ -4,3 +4,8 @@ export interface Cell {
   b: number;
   pos: [number, number];
 }
+
+export interface CellPos {
+  x: number;
+  y: number;
+}

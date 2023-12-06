@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular17-project-bootstrap": {
+    "huezz": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -21,7 +21,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/angular17-project-bootstrap",
+            "outputPath": "dist/huezz",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
@@ -79,10 +79,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "angular17-project-bootstrap:build:production"
+              "buildTarget": "huezz:build:production"
             },
             "development": {
-              "buildTarget": "angular17-project-bootstrap:build:development"
+              "buildTarget": "huezz:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -90,7 +90,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "angular17-project-bootstrap:build"
+            "buildTarget": "huezz:build"
           }
         },
         "test": {

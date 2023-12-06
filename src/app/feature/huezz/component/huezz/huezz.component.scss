@@ -1,5 +1,12 @@
 @import 'app-theme';
 
+:host {
+  padding-top: 25vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .boxes {
   margin: auto;
   display: flex;
@@ -9,8 +16,17 @@
 .rect {
   stroke: rgba(0, 0, 0, 100%);
   stroke-width: 0;
+}
+
+.circle {
+  fill: transparent;
 
   &.placed {
-    opacity: 1;
+    fill: black;
   }
+}
+
+.rect-shine {
+  fill: rgba(255, 255, 255, 50%);
+  filter: blur(40px);
 }
