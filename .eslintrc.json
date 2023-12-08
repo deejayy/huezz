@@ -46,7 +46,7 @@
         "@angular-eslint/pipe-prefix": "error",
         "@angular-eslint/prefer-output-readonly": "error",
         "@angular-eslint/relative-url-prefix": "error",
-        "@angular-eslint/sort-ngmodule-metadata-arrays": "error",
+        "@angular-eslint/sort-ngmodule-metadata-arrays": "off",
         "@angular-eslint/use-component-view-encapsulation": "error",
         "@angular-eslint/use-injectable-provided-in": "off",
         "@angular-eslint/use-lifecycle-interface": "error",

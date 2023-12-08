@@ -1,0 +1,30 @@
+@import 'app-theme';
+
+.scores {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  padding-right: 32px;
+
+  & div {
+    flex-basis: 0;
+    flex-grow: 1;
+  }
+
+  .score {
+    text-align: center;
+    font-size: 20px;
+    letter-spacing: 2px;
+    font-weight: bold;
+    padding: 16px;
+  }
+
+  .last-score {
+    text-align: left;
+  }
+
+  .high-score {
+    text-align: right;
+  }
+}

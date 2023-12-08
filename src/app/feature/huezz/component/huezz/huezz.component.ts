@@ -1,14 +1,10 @@
 /* eslint-disable no-magic-numbers */
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
 import { Cell, CellPos } from '@feature/huezz/model/huezz.model';
+import { SettingsFacade } from '@feature/settings/store/settings.facade';
+import { Observable, Subscription, combineLatest, map, of, tap } from 'rxjs';
 
-const GRID_SIZE = 5;
-const RAND_ITER = GRID_SIZE * GRID_SIZE;
-const GRID_WIDTH = 360;
-// const COLOR_MAX = 256;
-// const COLOR_START = 0;
-// const COLOR_CENTER = 2;
-// const DIST = Math.floor((COLOR_MAX - COLOR_START) / GRID_SIZE);
+const RAND_ITER = 1;
 
 @Component({
   selector: 'app-huezz',
@@ -16,141 +12,132 @@ const GRID_WIDTH = 360;
   styleUrl: './huezz.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HuezzComponent {
-  public gridSize = GRID_SIZE;
-  public gridWidth = GRID_WIDTH;
+export class HuezzComponent implements OnDestroy {
+  public cellSize: number = 100;
 
-  public grid: Cell[][] = Array.from({ length: GRID_SIZE }, (_1, r) =>
-    Array.from({ length: GRID_SIZE }, (_2, c) => ({ r: 128, g: 128, b: 128, pos: [r, c] })),
-  );
+  public cellsX$: Observable<number> = of(5);
+  public cellsY$: Observable<number> = of(10);
 
-  private dragging: boolean = false;
-  private pickedX: number | undefined;
-  private pickedY: number | undefined;
-  private dropX: number | undefined;
-  private dropY: number | undefined;
+  public width$: Observable<number> = this.cellsX$.pipe(map((v) => v * this.cellSize));
+  public height$: Observable<number> = this.cellsY$.pipe(map((v) => v * this.cellSize));
 
-  constructor() {
-    this.generateGrid();
-    this.shuffle();
-  }
+  public grid: Cell[][] = [[]];
+  public sourceCell: CellPos | undefined;
+  public targetCell: CellPos | undefined;
 
-  public generateGrid() {
-    const startR = Math.floor(Math.random() * 256);
-    const stepR = Math.floor((startR < 128 ? 256 - startR : -1 * startR) / this.gridSize);
-    const startG = Math.floor(Math.random() * 256);
-    const stepG = Math.floor((startG < 128 ? 256 - startG : -1 * startG) / this.gridSize);
-    const startB = Math.floor(Math.random() * 256);
-    const stepB = Math.floor((startB < 128 ? 256 - startB : -1 * startB) / this.gridSize);
-    console.warn([startR, stepR, startG, stepG, startB, stepB]);
+  private subs: Subscription = new Subscription();
 
-    this.grid = Array.from({ length: GRID_SIZE }, (_1, r) =>
-      Array.from({ length: GRID_SIZE }, (_2, c) => ({
-        r: startR + r * stepR,
-        g: startG + c * stepG,
-        b: startB + ((c + r) / 2) * stepB,
-        pos: [r, c],
-      })),
+  public newFeatures$: Observable<boolean> = this.settingsFacade.newFeatures$;
+
+  constructor(private settingsFacade: SettingsFacade) {
+    this.subs.add(
+      combineLatest([this.cellsX$, this.cellsY$])
+        .pipe(
+          tap(([x, y]) => {
+            this.grid = this.createGrid(x, y);
+            this.shuffleGrid(x, y);
+          }),
+        )
+        .subscribe(),
     );
   }
 
-  public shuffle() {
+  private shuffleGrid(width: number, height: number) {
     for (let i = 0; i < RAND_ITER; i++) {
-      const rX1 = Math.floor(Math.random() * GRID_SIZE);
-      const rY1 = Math.floor(Math.random() * GRID_SIZE);
-      const rX2 = Math.floor(Math.random() * GRID_SIZE);
-      const rY2 = Math.floor(Math.random() * GRID_SIZE);
+      const rX1 = Math.floor(Math.random() * width);
+      const rY1 = Math.floor(Math.random() * height);
+      const rX2 = Math.floor(Math.random() * width);
+      const rY2 = Math.floor(Math.random() * height);
       if (
-        !['0/0', `0/${this.gridSize - 1}`, `${this.gridSize - 1}/0`, `${this.gridSize - 1}/${this.gridSize - 1}`].includes(
-          `${rX1}/${rY1}`,
-        ) &&
-        !['0/0', `0/${this.gridSize - 1}`, `${this.gridSize - 1}/0`, `${this.gridSize - 1}/${this.gridSize - 1}`].includes(`${rX2}/${rY2}`)
+        !['0/0', `0/${height - 1}`, `${width - 1}/0`, `${width - 1}/${height - 1}`].includes(`${rX1}/${rY1}`) &&
+        !['0/0', `0/${height - 1}`, `${width - 1}/0`, `${width - 1}/${height - 1}`].includes(`${rX2}/${rY2}`)
       ) {
-        const elem = this.grid[rX1]![rY1]!;
-        this.grid[rX1]![rY1] = this.grid[rX2]![rY2]!;
-        this.grid[rX2]![rY2] = elem;
+        this.replaceCell({ x: rX1, y: rY1 }, { x: rX2, y: rY2 });
       }
     }
   }
 
-  private getTouchCoords = (_event: TouchEvent): CellPos => {
-    const posX = Math.floor(
-      (_event.targetTouches[0]!.clientX - (document.querySelector('.boxes') as HTMLElement).offsetLeft) / (this.gridWidth / this.gridSize),
-    );
-    const posY = Math.floor(
-      (_event.targetTouches[0]!.clientY - (document.querySelector('.boxes') as HTMLElement).offsetTop) / (this.gridWidth / this.gridSize),
-    );
+  private createGrid(width: number, height: number): Cell[][] {
+    const dir = Math.random() > 0.5 ? 1 : 0;
 
-    return { x: posX, y: posY };
-  };
+    const startR = Math.floor(Math.random() * 256);
+    const stepR = Math.floor((startR < 128 ? 256 - startR : -1 * startR) / height);
+    const startG = Math.floor(Math.random() * 256);
+    const stepG = Math.floor((startG < 128 ? 256 - startG : -1 * startG) / width);
+    const startB = Math.floor(Math.random() * 256);
+    const stepB = Math.floor((startB < 128 ? 256 - startB : -1 * startB) / (dir ? width : height));
 
-  public touchStart(_event: TouchEvent) {
-    _event.preventDefault();
-    this.pickUp(this.getTouchCoords(_event));
+    return Array.from({ length: height }, (_1, ix) => {
+      return Array.from({ length: width }, (_2, iy) => {
+        return {
+          r: startR + ix * stepR,
+          g: startG + iy * stepG,
+          b: startB + (dir ? ix : iy) * stepB,
+          pos: [iy, ix],
+        };
+      });
+    });
   }
 
-  private inRange = (place: number | undefined): boolean => {
-    return place !== undefined && place >= 0 && place <= this.gridSize - 1;
-  };
-
-  public touchEnd(drop: boolean = true) {
-    this.release(drop);
+  private touchToCellPos(touch: Touch, cellsX: number): CellPos {
+    const container = document.querySelector('.boxes') as HTMLElement;
+    const touchPos = { x: touch.clientX - container.offsetLeft, y: touch.clientY - container.offsetTop };
+    const boxWidth = container.clientWidth / cellsX;
+    return {
+      x: Math.floor(touchPos.x / boxWidth),
+      y: Math.floor(touchPos.y / boxWidth),
+    };
   }
 
-  public touchMove(_event: TouchEvent) {
-    _event.preventDefault();
-    if (this.dragging) {
-      this.updateCoords(this.getTouchCoords(_event));
+  private replaceCell(sourcePos: CellPos | undefined, targetPos: CellPos | undefined) {
+    if (sourcePos && targetPos && this.grid[sourcePos.y]?.[sourcePos.x] && this.grid[targetPos.y]?.[targetPos.x]) {
+      const elem = this.grid[sourcePos.y]![sourcePos.x]!;
+      this.grid[sourcePos.y]![sourcePos.x] = this.grid[targetPos.y]![targetPos.x]!;
+      this.grid[targetPos.y]![targetPos.x] = elem;
     }
   }
 
-  private updateCoords(pos: CellPos) {
-    this.dropX = pos.x;
-    this.dropY = pos.y;
-  }
-
-  private checkGameEnd(grid: Cell[][]): boolean {
+  public checkGameEnd(grid: Cell[][]): boolean {
     return grid
       .map((row, r) => {
-        return row.every((cell, c) => cell.pos[0] === r && cell.pos[1] === c);
+        return row.every((cell, c) => cell.pos[0] === c && cell.pos[1] === r);
       })
       .every(Boolean);
   }
 
-  private pickUp(pos: CellPos) {
-    this.pickedX = pos.x;
-    this.pickedY = pos.y;
+  private dropCell() {
+    this.replaceCell(this.sourceCell, this.targetCell);
+    this.sourceCell = undefined;
+    this.targetCell = undefined;
 
-    this.dragging = true;
+    console.warn(this.checkGameEnd(this.grid));
   }
 
-  private release(drop: boolean = true) {
-    this.dragging = false;
-    if (drop) {
-      if ([this.pickedX, this.pickedY, this.dropX, this.dropY].every(this.inRange)) {
-        const elem = this.grid[this.pickedY!]![this.pickedX!]!;
-        this.grid[this.pickedY!]![this.pickedX!] = this.grid[this.dropY!]![this.dropX!]!;
-        this.grid[this.dropY!]![this.dropX!] = elem;
-      }
-      console.warn(this.checkGameEnd(this.grid));
-    }
-    this.dropX = undefined;
-    this.dropY = undefined;
-    this.pickedX = undefined;
-    this.pickedY = undefined;
+  public touchStart(pos: CellPos) {
+    this.sourceCell = pos;
   }
 
-  public dragEnd() {
-    this.release();
+  public touchMove(event: TouchEvent) {
+    this.targetCell = this.touchToCellPos(event.touches[0]!, 3);
   }
 
-  public dragStart(_event: MouseEvent, pos: CellPos) {
-    this.pickUp(pos);
+  public touchEnd() {
+    this.dropCell();
   }
 
-  public dragOver(_event: MouseEvent, pos: CellPos) {
-    if (this.dragging) {
-      this.updateCoords(pos);
-    }
+  public mouseDown(pos: CellPos) {
+    this.sourceCell = pos;
+  }
+
+  public mouseMove(pos: CellPos) {
+    this.targetCell = pos;
+  }
+
+  public mouseUp() {
+    this.dropCell();
+  }
+
+  public ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 }

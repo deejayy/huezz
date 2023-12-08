@@ -9,6 +9,8 @@ import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { FrameModule } from '@shared/frame/frame.module';
 
+import { scoreMetaReducer } from '@feature/huezz/module/score/store/score.reducer';
+import { settingsMetaReducer } from '@feature/settings/store/settings.reducer';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -22,7 +24,7 @@ export class ConfigVars {
     AppRoutingModule,
     BrowserAnimationsModule,
     FrameModule,
-    StoreModule.forRoot(),
+    StoreModule.forRoot({}, { metaReducers: [settingsMetaReducer, scoreMetaReducer] }),
     EffectsModule.forRoot(),
     StoreDevtoolsModule.instrument({
       name: 'Huezz',

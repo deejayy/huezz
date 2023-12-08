@@ -1,32 +1,67 @@
 @import 'app-theme';
 
-:host {
-  padding-top: 25vh;
+.header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+
+  .score {
+    flex-grow: 1;
+  }
+}
+
+.game {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
 .boxes {
-  margin: auto;
+  max-width: 80vw;
+  max-height: 80vh;
   display: flex;
-  width: min-content;
-}
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  overflow: hidden;
 
-.rect {
-  stroke: rgba(0, 0, 0, 100%);
-  stroke-width: 0;
-}
+  .svg {
+    .line {
+      --width: 300px;
+      --height: 300px;
+      transform: translate(calc(var(--width) * -1), calc(var(--height) * -1));
+      stroke: white;
+      stroke-width: 100px;
 
-.circle {
-  fill: transparent;
+      &.complete {
+        animation: shine 1.5s forwards;
+      }
+    }
 
-  &.placed {
-    fill: black;
+    .cell-light {
+      fill: rgba(255, 255, 255, 20%);
+      transform: scale(0.5);
+    }
+
+    .circle {
+      fill: none;
+
+      &.placed {
+        fill: black;
+      }
+    }
   }
 }
 
-.rect-shine {
-  fill: rgba(255, 255, 255, 50%);
-  filter: blur(40px);
+@keyframes shine {
+  0% {
+    transform: translate(calc(var(--width) * -1), calc(var(--height) * -1));
+  }
+
+  100% {
+    transform: translate(var(--width), var(--height));
+  }
 }
