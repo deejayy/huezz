@@ -37,7 +37,7 @@ export class ScoreFacade {
     this.store.dispatch(ScoreActions.endGame({ multiplier, width, height }));
   }
 
-  public addStep(): void {
-    this.store.dispatch(ScoreActions.addStep());
+  public addStep(multiplier: number): void {
+    this.store.dispatch(ScoreActions.addStep({ multiplier }));
   }
 }

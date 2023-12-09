@@ -12,6 +12,9 @@ export class SettingsFacade {
   public boardWidth$: Observable<number> = this.store.select(settingsFeature.selectBoardWidth);
   public boardHeight$: Observable<number> = this.store.select(settingsFeature.selectBoardHeight);
   public difficulty$: Observable<number> = this.store.select(settingsFeature.selectDifficulty);
+  public settings$: Observable<{ boardHeight: number; boardWidth: number; difficulty: number }> = this.store.select(
+    settingsFeature.selectSettings,
+  );
 
   constructor(private store: Store<SettingsState>) {}
 

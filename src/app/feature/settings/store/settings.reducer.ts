@@ -22,25 +22,40 @@ export const settingsReducer = createReducer(
 export const settingsFeature = createFeature({
   name: 'settings',
   reducer: settingsReducer,
-  extraSelectors: ({ selectLatestUpdate, selectAckUpdate }) => ({
+  extraSelectors: ({ selectLatestUpdate, selectAckUpdate, selectBoardHeight, selectBoardWidth, selectDifficulty }) => ({
     selectNewFeatures: createSelector(
       selectLatestUpdate,
       selectAckUpdate,
       (latestUpdate, ackUpdate) => latestUpdate.toString() !== ackUpdate?.toString(),
     ),
+    selectSettings: createSelector(selectBoardHeight, selectBoardWidth, selectDifficulty, (boardHeight, boardWidth, difficulty) => ({
+      boardHeight,
+      boardWidth,
+      difficulty,
+    })),
   }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const settingsMetaReducer = (reducer: any): any => {
+  // eslint-disable-next-line complexity
   return (state: SettingsState, action: Action) => {
-    const newState = reducer(state, action);
+    const newState = reducer(state, action) as { settings: SettingsState };
 
     if (action.type === '@ngrx/store/init') {
       try {
         const ackDate: string | undefined = localStorage.getItem('ackDate') ?? undefined;
 
         newState.settings.ackUpdate = ackDate ? new Date(ackDate) : undefined;
+      } catch (e) {
+        console.error('Cannot acccess localStorage', e);
+      }
+
+      try {
+        const storedSettings = JSON.parse(localStorage.getItem('settings') ?? '{}');
+        newState.settings.boardWidth = storedSettings.boardWidth ?? 5;
+        newState.settings.boardHeight = storedSettings.boardHeight ?? 10;
+        newState.settings.difficulty = storedSettings.difficulty ?? 10;
       } catch (e) {
         console.error('Cannot acccess localStorage', e);
       }

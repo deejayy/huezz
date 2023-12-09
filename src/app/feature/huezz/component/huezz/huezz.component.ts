@@ -4,7 +4,7 @@ import { ScoreFacade } from '@feature/huezz/module/score/store/score.facade';
 import { SettingsFacade } from '@feature/settings/store/settings.facade';
 import { Observable, Subscription, combineLatest, fromEvent, map, startWith, take, tap, withLatestFrom } from 'rxjs';
 
-const RAND_ITER = 1;
+const RAND_ITER = 400;
 const CELL_SIZE_PX = 100;
 const COLOR_SCALE = 256;
 const COLOR_HALVING = 128;
@@ -152,13 +152,13 @@ export class HuezzComponent implements OnDestroy, OnInit {
       this.sourceCell = undefined;
       this.targetCell = undefined;
 
-      this.scoreFacade.addStep();
+      this.difficulty$.pipe(take(1), withLatestFrom(this.cellsX$, this.cellsY$)).subscribe(([level, x, y]) => {
+        this.scoreFacade.addStep(level);
 
-      if (this.checkGameEnd(this.grid) === 0) {
-        this.difficulty$.pipe(take(1), withLatestFrom(this.cellsX$, this.cellsY$)).subscribe(([level, x, y]) => {
+        if (this.checkGameEnd(this.grid) === 0) {
           this.scoreFacade.endGame(level, x, y);
-        });
-      }
+        }
+      });
     }
   }
 

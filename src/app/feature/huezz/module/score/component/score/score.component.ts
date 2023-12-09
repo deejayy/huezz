@@ -15,6 +15,7 @@ export class ScoreComponent implements OnInit {
   @Input() public height: number | null = null;
 
   public score$: Observable<number> = this.scoreFacade.score$.pipe(map((score) => score / SCORE_SOFTENER));
+  public lastScore$: Observable<number> = this.scoreFacade.score$.pipe(map((score) => score / SCORE_SOFTENER));
   public timer$: Observable<Date> = this.scoreFacade.timer$;
   public steps$: Observable<number> = this.scoreFacade.steps$;
 

@@ -9,20 +9,19 @@ export const scoreReducer = createReducer(
     state.score = 0;
   }),
   produceOn(ScoreActions.startGame, (state, action) => {
+    state.score = 0;
     state.playing = true;
     state.steps = action.score;
     state.gameStart = new Date();
   }),
   produceOn(ScoreActions.endGame, (state, action) => {
+    const score = (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier;
     state.playing = false;
-    state.score = 0;
-    state.highScore[action.width * action.height] = Math.min(
-      state.highScore[action.width * action.height] ?? Infinity,
-      (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier,
-    );
+    state.highScore[action.width * action.height] = Math.min(state.highScore[action.width * action.height] ?? Infinity, score);
   }),
-  produceOn(ScoreActions.addStep, (state) => {
+  produceOn(ScoreActions.addStep, (state, action) => {
     state.steps += 1;
+    state.score = (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier;
   }),
 );
 

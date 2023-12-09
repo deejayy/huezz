@@ -8,7 +8,6 @@
   padding-right: 32px;
 
   & div {
-    flex-basis: 0;
     flex-grow: 1;
   }
 
@@ -17,7 +16,6 @@
     font-size: 20px;
     letter-spacing: 2px;
     font-weight: bold;
-    padding: 16px;
   }
 
   .last-score {
