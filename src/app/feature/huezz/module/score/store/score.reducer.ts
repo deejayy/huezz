@@ -8,9 +8,9 @@ export const scoreReducer = createReducer(
   produceOn(ScoreActions.resetScore, (state) => {
     state.score = 0;
   }),
-  produceOn(ScoreActions.startGame, (state) => {
+  produceOn(ScoreActions.startGame, (state, action) => {
     state.playing = true;
-    state.steps = 0;
+    state.steps = action.score;
     state.gameStart = new Date();
   }),
   produceOn(ScoreActions.endGame, (state, action) => {

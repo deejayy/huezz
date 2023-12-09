@@ -73,10 +73,15 @@
           y2="0"
           filter="url(#f2)"
           class="line"
-          [ngClass]="{ complete: checkGameEnd(grid) }"
+          [ngClass]="{ complete: checkGameEnd(grid) === 0 }"
           [ngStyle]="{ '--width': (width$ | async) + 'px', '--height': (height$ | async) + 'px' }"
         />
       </svg>
     </div>
+  </div>
+  <div class="controls">
+    <button mat-icon-button #restartButton>
+      <mat-icon>refresh</mat-icon>
+    </button>
   </div>
 </div>

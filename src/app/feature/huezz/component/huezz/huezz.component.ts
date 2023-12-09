@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Cell, CellPos } from '@feature/huezz/model/huezz.model';
 import { ScoreFacade } from '@feature/huezz/module/score/store/score.facade';
 import { SettingsFacade } from '@feature/settings/store/settings.facade';
-import { Observable, Subscription, combineLatest, fromEvent, map, take, tap } from 'rxjs';
+import { Observable, Subscription, combineLatest, fromEvent, map, startWith, take, tap } from 'rxjs';
 
 const RAND_ITER = 1;
 const CELL_SIZE_PX = 100;
@@ -21,6 +21,7 @@ const DIRECTION_DIVIDER = 0.5;
 })
 export class HuezzComponent implements OnDestroy, OnInit {
   @ViewChild('svg', { read: ElementRef, static: true }) public svg!: ElementRef<HTMLElement>;
+  @ViewChild('restartButton', { read: ElementRef, static: true }) public restartButton!: ElementRef<HTMLButtonElement>;
 
   public cellSize: number = CELL_SIZE_PX;
 
@@ -39,21 +40,26 @@ export class HuezzComponent implements OnDestroy, OnInit {
 
   public newFeatures$: Observable<boolean> = this.settingsFacade.newFeatures$;
 
-  constructor(private settingsFacade: SettingsFacade, private scoreFacade: ScoreFacade) {
+  constructor(private settingsFacade: SettingsFacade, private scoreFacade: ScoreFacade, private cdr: ChangeDetectorRef) {}
+
+  public ngOnInit(): void {
     this.subs.add(
-      combineLatest([this.cellsX$, this.cellsY$, this.difficulty$])
+      combineLatest([
+        this.cellsX$,
+        this.cellsY$,
+        this.difficulty$,
+        fromEvent<TouchEvent>(this.restartButton.nativeElement, 'click').pipe(startWith(true)),
+      ])
         .pipe(
           tap(([x, y, level]) => {
             this.grid = this.createGrid(x, y, level);
             this.shuffleGrid(x, y);
-            this.scoreFacade.startGame();
+            this.scoreFacade.startGame(x * y - this.checkGameEnd(this.grid));
           }),
         )
-        .subscribe(),
+        .subscribe(() => this.cdr.markForCheck()),
     );
-  }
 
-  public ngOnInit(): void {
     this.subs.add(
       combineLatest([fromEvent<TouchEvent>(this.svg.nativeElement, 'touchmove'), this.cellsX$]).subscribe(
         ([event, width]: [TouchEvent, number]) => {
@@ -82,12 +88,13 @@ export class HuezzComponent implements OnDestroy, OnInit {
     const dir = Math.random() > DIRECTION_DIVIDER ? 1 : 0;
 
     const startR = Math.floor(Math.random() * COLOR_SCALE);
+    const startG = Math.floor(Math.random() * COLOR_SCALE);
+    const startB = Math.floor(Math.random() * COLOR_SCALE);
+
     const stepR =
       Math.floor((startR < COLOR_HALVING ? COLOR_SCALE - startR : COLOR_REVERSE * startR) / height) * (difficulty / DIFFIULTY_DIVIDER);
-    const startG = Math.floor(Math.random() * COLOR_SCALE);
     const stepG =
       Math.floor((startG < COLOR_HALVING ? COLOR_SCALE - startG : COLOR_REVERSE * startG) / width) * (difficulty / DIFFIULTY_DIVIDER);
-    const startB = Math.floor(Math.random() * COLOR_SCALE);
     const stepB =
       Math.floor((startB < COLOR_HALVING ? COLOR_SCALE - startB : COLOR_REVERSE * startB) / (dir ? width : height)) *
       (difficulty / DIFFIULTY_DIVIDER);
@@ -132,12 +139,12 @@ export class HuezzComponent implements OnDestroy, OnInit {
     return false;
   }
 
-  public checkGameEnd(grid: Cell[][]): boolean {
+  public checkGameEnd(grid: Cell[][]): number {
     return grid
       .map((row, r) => {
-        return row.every((cell, c) => cell.pos[0] === c && cell.pos[1] === r);
+        return row.filter((cell, c) => cell.pos[0] !== c || cell.pos[1] !== r).length;
       })
-      .every(Boolean);
+      .reduce((acc, curr) => acc + curr, 0);
   }
 
   private dropCell() {
@@ -147,7 +154,7 @@ export class HuezzComponent implements OnDestroy, OnInit {
 
       this.scoreFacade.addStep();
 
-      if (this.checkGameEnd(this.grid)) {
+      if (this.checkGameEnd(this.grid) === 0) {
         this.difficulty$.pipe(take(1)).subscribe((level) => {
           this.scoreFacade.endGame(level);
         });

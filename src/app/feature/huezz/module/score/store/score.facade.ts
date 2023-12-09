@@ -25,8 +25,8 @@ export class ScoreFacade {
     this.store.dispatch(ScoreActions.resetScore());
   }
 
-  public startGame(): void {
-    this.store.dispatch(ScoreActions.startGame());
+  public startGame(startScore: number): void {
+    this.store.dispatch(ScoreActions.startGame({ score: startScore }));
   }
 
   public endGame(multiplier: number): void {
