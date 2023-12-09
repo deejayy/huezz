@@ -3,6 +3,7 @@ export interface ScoreState {
   gameStart: Date;
   playing: boolean;
   steps: number;
+  highScore: Record<number, number>;
 }
 
 export const initialScoreState: ScoreState = {
@@ -10,4 +11,5 @@ export const initialScoreState: ScoreState = {
   gameStart: new Date(),
   playing: false,
   steps: 0,
+  highScore: {},
 };

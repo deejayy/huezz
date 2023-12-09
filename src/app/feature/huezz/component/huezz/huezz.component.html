@@ -6,7 +6,7 @@
       </button>
     </div>
     <div class="score">
-      <app-score></app-score>
+      <app-score [width]="cellsX$ | async" [height]="cellsY$ | async"></app-score>
     </div>
   </div>
   <div class="game">
@@ -81,7 +81,7 @@
   </div>
   <div class="controls">
     <button mat-icon-button #restartButton>
-      <mat-icon>refresh</mat-icon>
+      <mat-icon>shuffle</mat-icon>
     </button>
   </div>
 </div>

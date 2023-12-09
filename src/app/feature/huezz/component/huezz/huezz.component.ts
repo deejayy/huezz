@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDe
 import { Cell, CellPos } from '@feature/huezz/model/huezz.model';
 import { ScoreFacade } from '@feature/huezz/module/score/store/score.facade';
 import { SettingsFacade } from '@feature/settings/store/settings.facade';
-import { Observable, Subscription, combineLatest, fromEvent, map, startWith, take, tap } from 'rxjs';
+import { Observable, Subscription, combineLatest, fromEvent, map, startWith, take, tap, withLatestFrom } from 'rxjs';
 
 const RAND_ITER = 1;
 const CELL_SIZE_PX = 100;
@@ -155,8 +155,8 @@ export class HuezzComponent implements OnDestroy, OnInit {
       this.scoreFacade.addStep();
 
       if (this.checkGameEnd(this.grid) === 0) {
-        this.difficulty$.pipe(take(1)).subscribe((level) => {
-          this.scoreFacade.endGame(level);
+        this.difficulty$.pipe(take(1), withLatestFrom(this.cellsX$, this.cellsY$)).subscribe(([level, x, y]) => {
+          this.scoreFacade.endGame(level, x, y);
         });
       }
     }

@@ -21,6 +21,10 @@ export class ScoreFacade {
 
   constructor(private store: Store<ScoreState>) {}
 
+  public getScore(width: number, height: number): Observable<number | undefined> {
+    return this.store.select(scoreFeature.selectBestScore(width, height));
+  }
+
   public resetScore(): void {
     this.store.dispatch(ScoreActions.resetScore());
   }
@@ -29,8 +33,8 @@ export class ScoreFacade {
     this.store.dispatch(ScoreActions.startGame({ score: startScore }));
   }
 
-  public endGame(multiplier: number): void {
-    this.store.dispatch(ScoreActions.endGame({ multiplier }));
+  public endGame(multiplier: number, width: number, height: number): void {
+    this.store.dispatch(ScoreActions.endGame({ multiplier, width, height }));
   }
 
   public addStep(): void {

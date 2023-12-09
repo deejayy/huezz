@@ -15,7 +15,11 @@ export const scoreReducer = createReducer(
   }),
   produceOn(ScoreActions.endGame, (state, action) => {
     state.playing = false;
-    state.score = (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier;
+    state.score = 0;
+    state.highScore[action.width * action.height] = Math.min(
+      state.highScore[action.width * action.height] ?? Infinity,
+      (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier,
+    );
   }),
   produceOn(ScoreActions.addStep, (state) => {
     state.steps += 1;
@@ -25,8 +29,9 @@ export const scoreReducer = createReducer(
 export const scoreFeature = createFeature({
   name: 'score',
   reducer: scoreReducer,
-  extraSelectors: ({ selectPlaying }) => ({
+  extraSelectors: ({ selectPlaying, selectHighScore }) => ({
     selectNotPlaying: createSelector(selectPlaying, (playing) => !playing),
+    selectBestScore: (width: number, height: number) => createSelector(selectHighScore, (highScores) => highScores[width * height]),
   }),
 });
 
@@ -36,7 +41,12 @@ export const scoreMetaReducer = (reducer: any): any => {
     const newState = reducer(state, action);
 
     if (action.type === '@ngrx/store/init') {
-      // newState.score.scoreByMode[gameModes.STANDARD].highScore = parseInt(storedScoreInfo);
+      try {
+        const storedScores = JSON.parse(localStorage.getItem('highScores') ?? '{}');
+        newState.score.highScore = storedScores;
+      } catch (e) {
+        console.error('Error loading highscores');
+      }
     }
 
     return newState;
