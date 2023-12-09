@@ -40,7 +40,7 @@
           [attr.height]="cellSize"
           [attr.fill]="cell | toRgba"
           class="cell"
-          (touchstart)="touchStart({x, y})"
+          (touchstart)="touchStart($event, {x, y})"
           (mousedown)="mouseDown({x, y})"
           (mousemove)="mouseMove({x, y})"
         />
@@ -53,7 +53,7 @@
             [attr.height]="cellSize"
             class="cell-light"
             rx="50%"
-            (touchstart)="touchStart({x, y})"
+            (touchstart)="touchStart($event, {x, y})"
             (mousedown)="mouseDown({x, y})"
             (mousemove)="mouseMove({x, y})"
           />

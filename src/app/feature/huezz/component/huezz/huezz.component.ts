@@ -63,6 +63,7 @@ export class HuezzComponent implements OnDestroy, OnInit {
     this.subs.add(
       combineLatest([fromEvent<TouchEvent>(this.svg.nativeElement, 'touchmove'), this.cellsX$]).subscribe(
         ([event, width]: [TouchEvent, number]) => {
+          event.preventDefault();
           this.targetCell = this.touchToCellPos(event.touches[0]!, width);
         },
       ),
@@ -162,7 +163,8 @@ export class HuezzComponent implements OnDestroy, OnInit {
     }
   }
 
-  public touchStart(pos: CellPos) {
+  public touchStart(event: TouchEvent, pos: CellPos) {
+    event.preventDefault();
     this.sourceCell = pos;
   }
 
