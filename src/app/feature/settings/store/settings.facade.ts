@@ -11,6 +11,7 @@ export class SettingsFacade {
   public latestUpdate$: Observable<Date> = this.store.select(settingsFeature.selectLatestUpdate);
   public boardWidth$: Observable<number> = this.store.select(settingsFeature.selectBoardWidth);
   public boardHeight$: Observable<number> = this.store.select(settingsFeature.selectBoardHeight);
+  public difficulty$: Observable<number> = this.store.select(settingsFeature.selectDifficulty);
 
   constructor(private store: Store<SettingsState>) {}
 
@@ -24,5 +25,9 @@ export class SettingsFacade {
 
   public setBoardHeight(size: number) {
     this.store.dispatch(SettingsActions.setBoardHeight({ size }));
+  }
+
+  public setDifficulty(level: number) {
+    this.store.dispatch(SettingsActions.setDifficulty({ level }));
   }
 }

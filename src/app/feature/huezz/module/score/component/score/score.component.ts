@@ -10,6 +10,8 @@ import { ScoreFacade } from '../../store/score.facade';
 })
 export class ScoreComponent {
   public score$: Observable<number> = this.scoreFacade.score$;
+  public timer$: Observable<Date> = this.scoreFacade.timer$;
+  public steps$: Observable<number> = this.scoreFacade.steps$;
 
   constructor(private scoreFacade: ScoreFacade) {}
 }

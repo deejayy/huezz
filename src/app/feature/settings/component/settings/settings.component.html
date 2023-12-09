@@ -7,9 +7,31 @@
   </div>
   <div class="options">
     <div class="option">
-      <!-- <mat-slide-toggle [checked]="zenMode$ | async" (change)="toggleZenMode()" [disabled]="false">
-        Zen mode - only perfect blocks
-      </mat-slide-toggle> -->
+      <div class="title">Difficulty</div>
+      <div class="slider-wrapper">
+        <mat-slider class="slider" [max]="10" [min]="1" [step]="1" [discrete]="true" [showTickMarks]="true" (change)="changeDifficulty(diffSlider.value)">
+          <input matSliderThumb #diffSlider [value]="difficulty$ | async" />
+        </mat-slider>
+      </div>
+    </div>
+    <div class="option">
+      <div class="title">Board size (width, height)</div>
+      <div class="slider-wrapper">
+        <div class="value">
+          {{ widthSlider.value }}
+        </div>
+        <mat-slider class="slider" [max]="20" [min]="3" [step]="1" [discrete]="true" [showTickMarks]="true" (change)="changeWidth(widthSlider.value)">
+          <input matSliderThumb #widthSlider [value]="width$ | async" />
+        </mat-slider>
+      </div>
+      <div class="slider-wrapper">
+        <div class="value">
+          {{ heightSlider.value }}
+        </div>
+        <mat-slider class="slider" [max]="20" [min]="3" [step]="1" [discrete]="true" [showTickMarks]="true" (change)="changeHeight(heightSlider.value)">
+          <input matSliderThumb #heightSlider [value]="height$ | async" />
+        </mat-slider>
+      </div>
     </div>
   </div>
 </div>

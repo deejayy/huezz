@@ -1,18 +1,33 @@
-import { Action, createFeature, createReducer } from '@ngrx/store';
+import { Action, createFeature, createReducer, createSelector } from '@ngrx/store';
 import { produceOn } from '@shared/helper/produce-on';
 import { ScoreActions } from './score.action';
 import { ScoreState, initialScoreState } from './score.state';
 
 export const scoreReducer = createReducer(
   initialScoreState,
-  produceOn(ScoreActions.resetScore, (state, action) => {
-    console.warn(state, action);
+  produceOn(ScoreActions.resetScore, (state) => {
+    state.score = 0;
+  }),
+  produceOn(ScoreActions.startGame, (state) => {
+    state.playing = true;
+    state.steps = 0;
+    state.gameStart = new Date();
+  }),
+  produceOn(ScoreActions.endGame, (state, action) => {
+    state.playing = false;
+    state.score = (new Date().getTime() - state.gameStart.getTime()) * state.steps * action.multiplier;
+  }),
+  produceOn(ScoreActions.addStep, (state) => {
+    state.steps += 1;
   }),
 );
 
 export const scoreFeature = createFeature({
   name: 'score',
   reducer: scoreReducer,
+  extraSelectors: ({ selectPlaying }) => ({
+    selectNotPlaying: createSelector(selectPlaying, (playing) => !playing),
+  }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

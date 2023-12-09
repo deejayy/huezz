@@ -1,4 +1,4 @@
 <div class="scores">
-  <div class="score">5 / 01:19</div>
+  <div class="score">{{ steps$ | async }} / {{ timer$ | async | date : 'mm:ss' }}</div>
   <div class="high-score">Best: 1</div>
 </div>

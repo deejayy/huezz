@@ -1,10 +1,17 @@
-/* eslint-disable no-magic-numbers */
-import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Cell, CellPos } from '@feature/huezz/model/huezz.model';
+import { ScoreFacade } from '@feature/huezz/module/score/store/score.facade';
 import { SettingsFacade } from '@feature/settings/store/settings.facade';
-import { Observable, Subscription, combineLatest, map, of, tap } from 'rxjs';
+import { Observable, Subscription, combineLatest, fromEvent, map, take, tap } from 'rxjs';
 
 const RAND_ITER = 1;
+const CELL_SIZE_PX = 100;
+const COLOR_SCALE = 256;
+const COLOR_HALVING = 128;
+const DIFFIULTY_DIVIDER = 10;
+const DEFAULT_DIFFICULTY = 10;
+const COLOR_REVERSE = -1;
+const DIRECTION_DIVIDER = 0.5;
 
 @Component({
   selector: 'app-huezz',
@@ -12,11 +19,14 @@ const RAND_ITER = 1;
   styleUrl: './huezz.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HuezzComponent implements OnDestroy {
-  public cellSize: number = 100;
+export class HuezzComponent implements OnDestroy, OnInit {
+  @ViewChild('svg', { read: ElementRef, static: true }) public svg!: ElementRef<HTMLElement>;
 
-  public cellsX$: Observable<number> = of(5);
-  public cellsY$: Observable<number> = of(10);
+  public cellSize: number = CELL_SIZE_PX;
+
+  public cellsX$: Observable<number> = this.settingsFacade.boardWidth$;
+  public cellsY$: Observable<number> = this.settingsFacade.boardHeight$;
+  public difficulty$: Observable<number> = this.settingsFacade.difficulty$;
 
   public width$: Observable<number> = this.cellsX$.pipe(map((v) => v * this.cellSize));
   public height$: Observable<number> = this.cellsY$.pipe(map((v) => v * this.cellSize));
@@ -29,16 +39,27 @@ export class HuezzComponent implements OnDestroy {
 
   public newFeatures$: Observable<boolean> = this.settingsFacade.newFeatures$;
 
-  constructor(private settingsFacade: SettingsFacade) {
+  constructor(private settingsFacade: SettingsFacade, private scoreFacade: ScoreFacade) {
     this.subs.add(
-      combineLatest([this.cellsX$, this.cellsY$])
+      combineLatest([this.cellsX$, this.cellsY$, this.difficulty$])
         .pipe(
-          tap(([x, y]) => {
-            this.grid = this.createGrid(x, y);
+          tap(([x, y, level]) => {
+            this.grid = this.createGrid(x, y, level);
             this.shuffleGrid(x, y);
+            this.scoreFacade.startGame();
           }),
         )
         .subscribe(),
+    );
+  }
+
+  public ngOnInit(): void {
+    this.subs.add(
+      combineLatest([fromEvent<TouchEvent>(this.svg.nativeElement, 'touchmove'), this.cellsX$]).subscribe(
+        ([event, width]: [TouchEvent, number]) => {
+          this.targetCell = this.touchToCellPos(event.touches[0]!, width);
+        },
+      ),
     );
   }
 
@@ -57,15 +78,19 @@ export class HuezzComponent implements OnDestroy {
     }
   }
 
-  private createGrid(width: number, height: number): Cell[][] {
-    const dir = Math.random() > 0.5 ? 1 : 0;
+  private createGrid(width: number, height: number, difficulty: number = DEFAULT_DIFFICULTY): Cell[][] {
+    const dir = Math.random() > DIRECTION_DIVIDER ? 1 : 0;
 
-    const startR = Math.floor(Math.random() * 256);
-    const stepR = Math.floor((startR < 128 ? 256 - startR : -1 * startR) / height);
-    const startG = Math.floor(Math.random() * 256);
-    const stepG = Math.floor((startG < 128 ? 256 - startG : -1 * startG) / width);
-    const startB = Math.floor(Math.random() * 256);
-    const stepB = Math.floor((startB < 128 ? 256 - startB : -1 * startB) / (dir ? width : height));
+    const startR = Math.floor(Math.random() * COLOR_SCALE);
+    const stepR =
+      Math.floor((startR < COLOR_HALVING ? COLOR_SCALE - startR : COLOR_REVERSE * startR) / height) * (difficulty / DIFFIULTY_DIVIDER);
+    const startG = Math.floor(Math.random() * COLOR_SCALE);
+    const stepG =
+      Math.floor((startG < COLOR_HALVING ? COLOR_SCALE - startG : COLOR_REVERSE * startG) / width) * (difficulty / DIFFIULTY_DIVIDER);
+    const startB = Math.floor(Math.random() * COLOR_SCALE);
+    const stepB =
+      Math.floor((startB < COLOR_HALVING ? COLOR_SCALE - startB : COLOR_REVERSE * startB) / (dir ? width : height)) *
+      (difficulty / DIFFIULTY_DIVIDER);
 
     return Array.from({ length: height }, (_1, ix) => {
       return Array.from({ length: width }, (_2, iy) => {
@@ -89,12 +114,22 @@ export class HuezzComponent implements OnDestroy {
     };
   }
 
-  private replaceCell(sourcePos: CellPos | undefined, targetPos: CellPos | undefined) {
-    if (sourcePos && targetPos && this.grid[sourcePos.y]?.[sourcePos.x] && this.grid[targetPos.y]?.[targetPos.x]) {
+  // eslint-disable-next-line complexity
+  private replaceCell(sourcePos: CellPos | undefined, targetPos: CellPos | undefined): boolean {
+    if (
+      sourcePos &&
+      targetPos &&
+      `${sourcePos.x}/${sourcePos.y}` !== `${targetPos.x}/${targetPos.y}` &&
+      this.grid[sourcePos.y]?.[sourcePos.x] &&
+      this.grid[targetPos.y]?.[targetPos.x]
+    ) {
       const elem = this.grid[sourcePos.y]![sourcePos.x]!;
       this.grid[sourcePos.y]![sourcePos.x] = this.grid[targetPos.y]![targetPos.x]!;
       this.grid[targetPos.y]![targetPos.x] = elem;
+      return true;
     }
+
+    return false;
   }
 
   public checkGameEnd(grid: Cell[][]): boolean {
@@ -106,19 +141,22 @@ export class HuezzComponent implements OnDestroy {
   }
 
   private dropCell() {
-    this.replaceCell(this.sourceCell, this.targetCell);
-    this.sourceCell = undefined;
-    this.targetCell = undefined;
+    if (this.replaceCell(this.sourceCell, this.targetCell)) {
+      this.sourceCell = undefined;
+      this.targetCell = undefined;
 
-    console.warn(this.checkGameEnd(this.grid));
+      this.scoreFacade.addStep();
+
+      if (this.checkGameEnd(this.grid)) {
+        this.difficulty$.pipe(take(1)).subscribe((level) => {
+          this.scoreFacade.endGame(level);
+        });
+      }
+    }
   }
 
   public touchStart(pos: CellPos) {
     this.sourceCell = pos;
-  }
-
-  public touchMove(event: TouchEvent) {
-    this.targetCell = this.touchToCellPos(event.touches[0]!, 3);
   }
 
   public touchEnd() {

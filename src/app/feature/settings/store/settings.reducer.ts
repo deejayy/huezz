@@ -14,6 +14,9 @@ export const settingsReducer = createReducer(
   produceOn(SettingsActions.acknowledgeUpdate, (state) => {
     state.ackUpdate = state.latestUpdate;
   }),
+  produceOn(SettingsActions.setDifficulty, (state, action) => {
+    state.difficulty = action.level;
+  }),
 );
 
 export const settingsFeature = createFeature({
