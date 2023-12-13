@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Observable, combineLatest, filter, interval, map, startWith, takeUntil } from 'rxjs';
+import { Observable, combineLatest, filter, interval, map, startWith } from 'rxjs';
 import { ScoreActions } from './score.action';
 import { scoreFeature } from './score.reducer';
 import { ScoreState } from './score.state';
@@ -13,9 +13,10 @@ export class ScoreFacade {
   public steps$: Observable<number> = this.store.select(scoreFeature.selectSteps);
   public timer$: Observable<Date> = combineLatest([
     this.store.select(scoreFeature.selectGameStart),
+    this.store.select(scoreFeature.selectPlaying),
     interval(MS_IN_SECOND).pipe(startWith(true)),
   ]).pipe(
-    takeUntil(this.store.select(scoreFeature.selectNotPlaying).pipe(filter(Boolean))),
+    filter(([, playing]) => playing),
     map(([gameStart]) => new Date(new Date().getTime() - gameStart.getTime())),
   );
 
